@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>PomodoroFocus UAO — Autorregulación Digital</title>
+<meta name="description" content="Temporizador Pomodoro para autorregulación del uso de pantalla — UAO">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+<style>
+/* ── Reset & tokens ── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1D9E75;
+  --green-light:#E1F5EE;
+  --green-dark:#085041;
+  --blue:#378ADD;
+  --blue-light:#E6F1FB;
+  --amber:#BA7517;
+  --amber-light:#FAEEDA;
+  --red:#E24B4A;
+  --red-light:#FCEBEB;
+  --surface:#FFFFFF;
+  --surface2:#F5F7F6;
+  --surface3:#EDF0EE;
+  --border:#D8DED9;
+  --border2:#C4CDC6;
+  --text:#1A211B;
+  --text2:#4B5E4F;
+  --text3:#7E948A;
+  --font-body:'Sora',sans-serif;
+  --font-mono:'DM Mono',monospace;
+  --r-sm:6px;
+  --r-md:10px;
+  --r-lg:16px;
+  --r-xl:24px;
+  --shadow:0 2px 14px rgba(0,0,0,.06),0 1px 3px rgba(0,0,0,.04);
+  --shadow-lg:0 8px 36px rgba(0,0,0,.10),0 2px 8px rgba(0,0,0,.05);
+}
+
+/* ── Page shell ── */
+body{
+  font-family:var(--font-body);
+  background:var(--surface2);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:24px 16px 48px;
+}
+
+/* subtle dot grid background */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:radial-gradient(var(--border) 1px,transparent 1px);
+  background-size:24px 24px;
+  pointer-events:none;
+  opacity:.5;
+}
+
+/* ── Header ── */
+.page-header{
+  width:100%;
+  max-width:430px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:20px;
+  position:relative;
+  z-index:1;
+}
+.logo-mark{
+  width:38px;height:38px;
+  background:var(--green);
+  border-radius:var(--r-md);
+  display:flex;align-items:center;justify-content:center;
+  color:white;font-size:20px;
+  flex-shrink:0;
+  box-shadow:0 2px 8px rgba(29,158,117,.35);
+}
+.page-header-text{}
+.page-title{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.2px}
+.page-sub{font-size:11.5px;color:var(--text3);font-weight:400}
+
+/* ── Phone frame ── */
+.phone{
+  width:100%;
+  max-width:390px;
+  background:var(--surface);
+  border-radius:var(--r-xl);
+  border:1px solid var(--border);
+  overflow:hidden;
+  box-shadow:var(--shadow-lg);
+  position:relative;
+  z-index:1;
+  min-height:640px;
+}
+
+/* ── Top bar ── */
+.topbar{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:14px 18px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.app-title{
+  font-size:14px;font-weight:600;
+  color:var(--text);
+  display:flex;align-items:center;gap:6px;
+}
+.app-title i{color:var(--green);font-size:16px}
+.week-badge{
+  font-size:11px;font-weight:500;
+  background:var(--green-light);
+  color:var(--green-dark);
+  padding:3px 11px;
+  border-radius:100px;
+}
+
+/* ── Nav tabs ── */
+.nav{
+  display:flex;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
+.nav-btn{
+  flex:1;
+  padding:10px 4px 9px;
+  font-size:11px;font-weight:500;
+  font-family:var(--font-body);
+  border:none;background:none;
+  color:var(--text3);
+  cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:color .2s,border-color .2s;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+.nav-btn i{font-size:15px;display:block}
+.nav-btn.active{color:var(--green);border-bottom-color:var(--green)}
+
+/* ── Screens ── */
+.screen{display:none;padding:16px;animation:fadeIn .18s ease}
+.screen.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Mode chips ── */
+.mode-row{display:flex;gap:6px;margin-bottom:16px}
+.mode-chip{
+  flex:1;padding:8px 4px;
+  font-size:11px;font-weight:500;
+  font-family:var(--font-body);
+  border:1px solid var(--border);
+  border-radius:var(--r-md);
+  background:none;color:var(--text2);
+  cursor:pointer;
+  transition:all .2s;
+  line-height:1.4;
+}
+.mode-chip.active{
+  background:var(--green-light);
+  border-color:var(--green);
+  color:var(--green-dark);
+}
+.mode-chip:hover:not(.active){background:var(--surface2)}
+
+/* ── Timer card ── */
+.timer-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:24px 16px 20px;
+  text-align:center;
+  margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.mode-label{
+  font-size:10.5px;font-weight:600;
+  letter-spacing:1.2px;
+  color:var(--green);
+  margin-bottom:18px;
+  text-transform:uppercase;
+}
+.ring-wrap{
+  position:relative;
+  width:168px;height:168px;
+  margin:0 auto 18px;
+}
+.ring-wrap svg{
+  transform:rotate(-90deg);
+  width:100%;height:100%;
+  filter:drop-shadow(0 2px 8px rgba(29,158,117,.18));
+}
+.ring-bg{fill:none;stroke:var(--green-light);stroke-width:8}
+.ring-fg{
+  fill:none;stroke:var(--green);stroke-width:8;
+  stroke-linecap:round;
+  stroke-dasharray:471;
+  stroke-dashoffset:0;
+  transition:stroke-dashoffset 1s linear,stroke .35s,filter .35s;
+}
+.time-center{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  text-align:center;
+}
+.time-digits{
+  font-size:40px;font-weight:500;
+  font-family:var(--font-mono);
+  font-variant-numeric:tabular-nums;
+  color:var(--text);
+  line-height:1;
+  letter-spacing:-1px;
+}
+.time-sub{font-size:11px;color:var(--text3);margin-top:5px;font-weight:400}
+
+.ctrl-row{display:flex;align-items:center;justify-content:center;gap:14px}
+.ctrl-main{
+  width:54px;height:54px;border-radius:50%;
+  border:1.5px solid var(--green);
+  background:var(--green-light);
+  color:var(--green-dark);
+  font-size:24px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+  box-shadow:0 2px 10px rgba(29,158,117,.2);
+}
+.ctrl-main:hover{background:var(--green);color:white;box-shadow:0 4px 16px rgba(29,158,117,.35)}
+.ctrl-sec{
+  width:40px;height:40px;border-radius:50%;
+  border:1px solid var(--border);
+  background:none;color:var(--text2);
+  font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.ctrl-sec:hover{background:var(--surface2);border-color:var(--border2)}
+
+.session-count{display:flex;gap:7px;justify-content:center;align-items:center;margin-top:16px}
+.pom-dot{
+  width:10px;height:10px;border-radius:50%;
+  border:1.5px solid var(--green);
+  background:transparent;
+  transition:background .3s,transform .2s;
+}
+.pom-dot.done{background:var(--green);transform:scale(1.15)}
+
+/* ── Stat cards ── */
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-card{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--r-md);
+  padding:12px 14px;
+}
+.stat-label{font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:500}
+.stat-val{font-size:22px;font-weight:600;color:var(--text);font-family:var(--font-mono)}
+.stat-unit{font-size:12px;font-weight:400;color:var(--text3);margin-left:1px;font-family:var(--font-body)}
+
+.section-title{font-size:12.5px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.2px}
+
+/* ── Activity list ── */
+.activity-list{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
+.activity-item{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-md);
+  padding:10px 12px;
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;
+  transition:all .2s;
+  user-select:none;
+}
+.activity-item:hover{border-color:var(--border2);background:var(--surface2)}
+.activity-item.done{background:var(--green-light);border-color:#5DCAA5}
+.act-icon{font-size:18px;color:var(--text3)}
+.activity-item.done .act-icon{color:var(--green-dark)}
+.act-text{flex:1;font-size:12.5px;color:var(--text);line-height:1.4}
+.act-check{
+  width:20px;height:20px;border-radius:50%;
+  border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:transparent;
+  transition:all .2s;flex-shrink:0;
+}
+.activity-item.done .act-check{background:var(--green);border-color:var(--green);color:white}
+
+/* ── Register card ── */
+.register-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:16px;
+  margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.reg-title{font-size:13px;font-weight:600;margin-bottom:14px;color:var(--text);display:flex;align-items:center;gap:6px}
+.reg-title i{color:var(--green)}
+.reg-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.reg-row:last-child{border-bottom:none;margin-bottom:0}
+.reg-label{font-size:13px;color:var(--text2)}
+.reg-input-wrap{display:flex;align-items:center;gap:8px}
+.reg-num{font-size:18px;font-weight:600;font-family:var(--font-mono);min-width:32px;text-align:right;color:var(--text)}
+.reg-unit{font-size:12px;color:var(--text3)}
+.stepper{display:flex;gap:4px}
+.step-btn{
+  width:30px;height:30px;
+  border-radius:var(--r-sm);
+  border:1px solid var(--border);
+  background:var(--surface2);
+  cursor:pointer;font-size:17px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text);
+  transition:all .2s;
+  font-family:monospace;
+}
+.step-btn:hover{background:var(--green-light);border-color:var(--green);color:var(--green-dark)}
+
+.save-btn{
+  width:100%;padding:13px;
+  border-radius:var(--r-md);
+  border:1.5px solid var(--green);
+  background:var(--green-light);
+  color:var(--green-dark);
+  font-size:14px;font-weight:600;
+  font-family:var(--font-body);
+  cursor:pointer;
+  transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.save-btn:hover{background:var(--green);color:white;box-shadow:0 4px 14px rgba(29,158,117,.3)}
+
+/* ── Progress ── */
+.progress-section{margin-bottom:16px}
+.prog-title{font-size:12.5px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.2px}
+
+.week-list{display:flex;flex-direction:column;gap:8px}
+.week-entry{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-md);
+  padding:12px 14px;
+  box-shadow:var(--shadow);
+}
+.week-entry-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.week-entry-label{font-size:13px;font-weight:600;color:var(--text)}
+.week-entry-date{font-size:11px;color:var(--text3)}
+.week-bars{display:flex;flex-direction:column;gap:6px}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bar-label{font-size:11px;color:var(--text3);width:64px;flex-shrink:0}
+.bar-track{flex:1;height:7px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.bar-fill.tiktok{background:var(--red)}
+.bar-fill.pomodoro{background:var(--green)}
+.bar-val{font-size:11px;color:var(--text3);width:28px;text-align:right;flex-shrink:0;font-family:var(--font-mono)}
+
+.empty-state{
+  font-size:13px;color:var(--text3);
+  text-align:center;padding:32px 16px;
+  line-height:1.7;
+}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(8px);
+  background:var(--green-dark);
+  color:white;
+  font-size:13px;font-weight:500;
+  padding:10px 20px;
+  border-radius:100px;
+  opacity:0;
+  transition:opacity .25s,transform .25s;
+  pointer-events:none;
+  white-space:nowrap;
+  z-index:100;
+  box-shadow:0 4px 20px rgba(0,0,0,.2);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Footer ── */
+.page-footer{
+  font-size:11px;color:var(--text3);
+  margin-top:20px;
+  text-align:center;
+  position:relative;z-index:1;
+  line-height:1.7;
+}
+
+/* ── Responsive ── */
+@media(max-width:430px){
+  body{padding:12px 0 40px}
+  .phone{border-radius:0;border-left:none;border-right:none;box-shadow:none}
+  .page-header{padding:0 16px}
+}
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="logo-mark"><i class="ti ti-clock"></i></div>
+  <div class="page-header-text">
+    <div class="page-title">PomodoroFocus UAO</div>
+    <div class="page-sub">Autorregulación digital · 8 semanas</div>
+  </div>
+</header>
+
+<div class="phone">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="app-title">
+      <i class="ti ti-clock"></i>PomodoroFocus UAO
+    </div>
+    <div class="week-badge" id="week-badge">Semana 1</div>
+  </div>
+
+  <!-- Nav tabs -->
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showScreen('timer',this)">
+      <i class="ti ti-player-play"></i>Temporizador
+    </button>
+    <button class="nav-btn" onclick="showScreen('registro',this)">
+      <i class="ti ti-edit"></i>Registro
+    </button>
+    <button class="nav-btn" onclick="showScreen('progreso',this)">
+      <i class="ti ti-chart-bar"></i>Progreso
+    </button>
+  </nav>
+
+  <!-- ── Screen: Temporizador ── -->
+  <div id="screen-timer" class="screen active">
+
+    <div class="mode-row">
+      <button class="mode-chip active" onclick="setMode('pomodoro',this)">Pomodoro<br>25 min</button>
+      <button class="mode-chip" onclick="setMode('corto',this)">Descanso<br>corto 5 min</button>
+      <button class="mode-chip" onclick="setMode('largo',this)">Descanso<br>largo 15 min</button>
+    </div>
+
+    <div class="timer-card">
+      <div class="mode-label" id="mode-label">Sesión de enfoque</div>
+      <div class="ring-wrap">
+        <svg viewBox="0 0 168 168" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle class="ring-bg" cx="84" cy="84" r="75"/>
+          <circle class="ring-fg" id="ring" cx="84" cy="84" r="75"/>
+        </svg>
+        <div class="time-center">
+          <div class="time-digits" id="timer-display">25:00</div>
+          <div class="time-sub" id="timer-sub">listo para empezar</div>
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <button class="ctrl-sec" onclick="resetTimer()" aria-label="Reiniciar"><i class="ti ti-refresh"></i></button>
+        <button class="ctrl-main" id="play-btn" onclick="toggleTimer()" aria-label="Iniciar o pausar">
+          <i class="ti ti-player-play" id="play-icon"></i>
+        </button>
+        <button class="ctrl-sec" onclick="skipTimer()" aria-label="Saltar"><i class="ti ti-player-skip-forward"></i></button>
+      </div>
+      <div class="session-count" id="dot-row" aria-label="Sesiones completadas"></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">Sesiones hoy</div>
+        <div class="stat-val" id="sessions-today">0<span class="stat-unit">/ 8</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Enfoque acumulado</div>
+        <div class="stat-val" id="focus-today">0<span class="stat-unit">min</span></div>
+      </div>
+    </div>
+
+    <div class="section-title">Actividades sustitutivas</div>
+    <div class="activity-list" id="act-list"></div>
+  </div>
+
+  <!-- ── Screen: Registro ── -->
+  <div id="screen-registro" class="screen">
+    <div class="register-card">
+      <div class="reg-title"><i class="ti ti-calendar"></i>Registro de hoy</div>
+
+      <div class="reg-row">
+        <span class="reg-label">Tiempo en TikTok</span>
+        <div class="reg-input-wrap">
+          <div class="stepper">
+            <button class="step-btn" onclick="adj('tiktok',-5)">−</button>
+            <button class="step-btn" onclick="adj('tiktok',5)">+</button>
+          </div>
+          <div><span class="reg-num" id="reg-tiktok">60</span><span class="reg-unit">min</span></div>
+        </div>
+      </div>
+
+      <div class="reg-row">
+        <span class="reg-label">Sesiones Pomodoro</span>
+        <div class="reg-input-wrap">
+          <div class="stepper">
+            <button class="step-btn" onclick="adj('pom',-1)">−</button>
+            <button class="step-btn" onclick="adj('pom',1)">+</button>
+          </div>
+          <div><span class="reg-num" id="reg-pom">0</span><span class="reg-unit">sesiones</span></div>
+        </div>
+      </div>
+
+      <div class="reg-row">
+        <span class="reg-label">Concentración</span>
+        <div class="reg-input-wrap">
+          <div class="stepper">
+            <button class="step-btn" onclick="adj('conc',-1)">−</button>
+            <button class="step-btn" onclick="adj('conc',1)">+</button>
+          </div>
+          <div><span class="reg-num" id="reg-conc">5</span><span class="reg-unit">/ 10</span></div>
+        </div>
+      </div>
+
+      <div class="reg-row" style="border-bottom:none">
+        <span class="reg-label">Semana actual</span>
+        <div class="reg-input-wrap">
+          <div class="stepper">
+            <button class="step-btn" onclick="adj('week',-1)">−</button>
+            <button class="step-btn" onclick="adj('week',1)">+</button>
+          </div>
+          <div><span class="reg-num" id="reg-week">1</span><span class="reg-unit">de 8</span></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="save-btn" onclick="saveEntry()">
+      <i class="ti ti-check" style="font-size:15px"></i>Guardar registro de hoy
+    </button>
+  </div>
+
+  <!-- ── Screen: Progreso ── -->
+  <div id="screen-progreso" class="screen">
+    <div class="progress-section">
+      <div class="prog-title">Resumen del proyecto</div>
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-label">Semanas registradas</div>
+          <div class="stat-val" id="p-weeks">0<span class="stat-unit">/ 8</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Reducción TikTok</div>
+          <div class="stat-val" id="p-reduction">—</div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-label">Total sesiones</div>
+          <div class="stat-val" id="p-sessions">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Conc. promedio</div>
+          <div class="stat-val" id="p-conc">—<span class="stat-unit">/ 10</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prog-title">Historial semanal</div>
+    <div class="week-list" id="week-list">
+      <div class="empty-state">Aún no hay registros.<br>Ve a la pestaña <strong>Registro</strong> para empezar.</div>
+    </div>
+  </div>
+</div>
+
+<footer class="page-footer">
+  PomodoroFocus UAO · Proyecto de autorregulación digital
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ─── Constants ─── */
+const CIRC = 2 * Math.PI * 75; // r=75
+const MODES = {
+  pomodoro: { label:'Sesión de enfoque', secs:25*60, color:'#1D9E75', bg:'#E1F5EE' },
+  corto:    { label:'Descanso corto',    secs:5*60,  color:'#378ADD', bg:'#E6F1FB' },
+  largo:    { label:'Descanso largo',    secs:15*60, color:'#BA7517', bg:'#FAEEDA' }
+};
+const ACTIVITIES = [
+  { icon:'ti-book',    text:'Leer un capítulo del libro de clase' },
+  { icon:'ti-pencil',  text:'Repasar apuntes de la clase anterior' },
+  { icon:'ti-run',     text:'Caminar 5 minutos sin celular' },
+  { icon:'ti-notes',   text:'Escribir en el diario de reflexión' },
+  { icon:'ti-friends', text:'Conversar con un compañero en persona' }
+];
+
+/* ─── State ─── */
+let curMode = 'pomodoro', timerSecs = 25*60;
+let running = false, interval = null;
+let sessionsToday = 0, focusToday = 0;
+let actDone = new Set();
+let regVals = { tiktok:60, pom:0, conc:5, week:1 };
+let entries = [];
+
+/* ─── Dots ─── */
+function buildDots() {
+  const r = document.getElementById('dot-row');
+  r.innerHTML = '';
+  for (let i = 0; i < 8; i++) {
+    const d = document.createElement('div');
+    d.className = 'pom-dot' + (i < sessionsToday ? ' done' : '');
+    r.appendChild(d);
+  }
+}
+
+/* ─── Ring ─── */
+function updateRing() {
+  const total = MODES[curMode].secs;
+  const pct = timerSecs / total;
+  const offset = CIRC * (1 - pct);
+  const ring = document.getElementById('ring');
+  ring.style.strokeDasharray = CIRC;
+  ring.style.strokeDashoffset = offset.toFixed(1);
+  ring.style.stroke = MODES[curMode].color;
+}
+
+function fmt(s) {
+  const m = Math.floor(s / 60), sec = s % 60;
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+function render() {
+  document.getElementById('timer-display').textContent = fmt(timerSecs);
+  updateRing();
+}
+
+/* ─── Mode switch ─── */
+function setMode(m, btn) {
+  curMode = m;
+  timerSecs = MODES[m].secs;
+  running = false; clearInterval(interval);
+  document.getElementById('play-icon').className = 'ti ti-player-play';
+  document.getElementById('mode-label').textContent = MODES[m].label;
+  document.getElementById('ring').style.stroke = MODES[m].color;
+  document.querySelector('.ring-bg').style.stroke = MODES[m].bg;
+  document.getElementById('timer-sub').textContent = 'listo para empezar';
+  document.querySelectorAll('.mode-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+/* ─── Timer controls ─── */
+function toggleTimer() {
+  if (!running) {
+    running = true;
+    document.getElementById('play-icon').className = 'ti ti-player-pause';
+    document.getElementById('timer-sub').textContent = 'en progreso...';
+    interval = setInterval(() => {
+      timerSecs--;
+      render();
+      if (timerSecs <= 0) { clearInterval(interval); running = false; onComplete(); }
+    }, 1000);
+  } else {
+    running = false; clearInterval(interval);
+    document.getElementById('play-icon').className = 'ti ti-player-play';
+    document.getElementById('timer-sub').textContent = 'pausado';
+  }
+}
+function resetTimer() {
+  running = false; clearInterval(interval);
+  timerSecs = MODES[curMode].secs;
+  document.getElementById('play-icon').className = 'ti ti-player-play';
+  document.getElementById('timer-sub').textContent = 'listo para empezar';
+  render();
+}
+function skipTimer() {
+  running = false; clearInterval(interval);
+  onComplete();
+}
+function onComplete() {
+  if (curMode === 'pomodoro') {
+    sessionsToday++; focusToday += 25;
+    document.getElementById('sessions-today').innerHTML = sessionsToday + '<span class="stat-unit">/ 8</span>';
+    document.getElementById('focus-today').innerHTML = focusToday + '<span class="stat-unit">min</span>';
+    regVals.pom = sessionsToday;
+    document.getElementById('reg-pom').textContent = sessionsToday;
+    buildDots();
+    showToast('¡Sesión completada! Toma un descanso 🌿');
+  } else {
+    showToast('Descanso terminado. ¡A concentrarse!');
+  }
+  timerSecs = MODES[curMode].secs;
+  document.getElementById('play-icon').className = 'ti ti-player-play';
+  document.getElementById('timer-sub').textContent = 'completado';
+  render();
+}
+
+/* ─── Activities ─── */
+function buildActivities() {
+  const list = document.getElementById('act-list');
+  list.innerHTML = '';
+  ACTIVITIES.forEach((a, i) => {
+    const el = document.createElement('div');
+    el.className = 'activity-item' + (actDone.has(i) ? ' done' : '');
+    el.onclick = () => { actDone.has(i) ? actDone.delete(i) : actDone.add(i); buildActivities(); };
+    el.innerHTML = `
+      <i class="ti ${a.icon} act-icon" aria-hidden="true"></i>
+      <span class="act-text">${a.text}</span>
+      <div class="act-check">${actDone.has(i) ? '<i class="ti ti-check" style="font-size:11px"></i>' : ''}</div>`;
+    list.appendChild(el);
+  });
+}
+
+/* ─── Register steppers ─── */
+function adj(k, d) {
+  const limits = { tiktok:[0,480], pom:[0,16], conc:[1,10], week:[1,8] };
+  regVals[k] = Math.max(limits[k][0], Math.min(limits[k][1], regVals[k] + d));
+  document.getElementById('reg-' + k).textContent = regVals[k];
+  if (k === 'week') document.getElementById('week-badge').textContent = 'Semana ' + regVals[k];
+}
+
+/* ─── Save entry ─── */
+function saveEntry() {
+  const w = regVals.week;
+  const idx = entries.findIndex(e => e.week === w);
+  const entry = {
+    week: w, tiktok: regVals.tiktok,
+    pom: regVals.pom, conc: regVals.conc,
+    date: new Date().toLocaleDateString('es-CO', { day:'2-digit', month:'short' })
+  };
+  if (idx > -1) entries[idx] = entry; else entries.push(entry);
+  entries.sort((a, b) => a.week - b.week);
+  renderProgress();
+  showToast('Registro semana ' + w + ' guardado ✓');
+}
+
+/* ─── Render progress ─── */
+function renderProgress() {
+  document.getElementById('p-weeks').innerHTML = entries.length + '<span class="stat-unit">/ 8</span>';
+  if (entries.length >= 2) {
+    const first = entries[0].tiktok, last = entries[entries.length - 1].tiktok;
+    const pct = Math.round((first - last) / first * 100);
+    document.getElementById('p-reduction').innerHTML = (pct > 0 ? '-' : '') + Math.abs(pct) + '<span class="stat-unit">%</span>';
+  } else {
+    document.getElementById('p-reduction').textContent = '—';
+  }
+  const totSess = entries.reduce((s, e) => s + e.pom, 0);
+  document.getElementById('p-sessions').textContent = totSess;
+  if (entries.length) {
+    const avgC = (entries.reduce((s, e) => s + e.conc, 0) / entries.length).toFixed(1);
+    document.getElementById('p-conc').innerHTML = avgC + '<span class="stat-unit">/ 10</span>';
+  } else {
+    document.getElementById('p-conc').textContent = '—';
+  }
+  const wl = document.getElementById('week-list');
+  if (!entries.length) {
+    wl.innerHTML = '<div class="empty-state">Aún no hay registros.<br>Ve a la pestaña <strong>Registro</strong> para empezar.</div>';
+    return;
+  }
+  const maxTik = Math.max(...entries.map(e => e.tiktok), 1);
+  const maxPom = Math.max(...entries.map(e => e.pom), 1);
+  wl.innerHTML = entries.map(e => {
+    const tikPct = Math.round(e.tiktok / maxTik * 100);
+    const pomPct = Math.round(e.pom / maxPom * 100);
+    return `<div class="week-entry">
+      <div class="week-entry-top">
+        <span class="week-entry-label">Semana ${e.week}</span>
+        <span class="week-entry-date">${e.date}</span>
+      </div>
+      <div class="week-bars">
+        <div class="bar-row">
+          <span class="bar-label">TikTok</span>
+          <div class="bar-track"><div class="bar-fill tiktok" style="width:${tikPct}%"></div></div>
+          <span class="bar-val">${e.tiktok}m</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Pomodoros</span>
+          <div class="bar-track"><div class="bar-fill pomodoro" style="width:${pomPct}%"></div></div>
+          <span class="bar-val">${e.pom}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── Screen switch ─── */
+function showScreen(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (id === 'progreso') renderProgress();
+}
+
+/* ─── Toast ─── */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ─── Init ─── */
+buildDots();
+buildActivities();
+render();
+</script>
+</body>
+</html>
